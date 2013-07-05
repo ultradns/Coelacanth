@@ -1,4 +1,3 @@
-
 # DNS JSON Spec
 
 The goal of this project is openly define a DNS JSON Specification that will facilitate interoperability between DNS Providers.
@@ -115,11 +114,10 @@ The Owner structure describes the record sets defined at a particular domain nam
 ### Valid values for fields
 
 | Field      | Meaning      | Type | Valid Values  |
-|:-------------:|:-------------:|:-----:|:-----:|	
+|:------:|:-------------:|:-----:|:-----:|	
 | name | The domain name for the owner	| string | valid domain name.  International domain names are specified using punycode. See [RFC 3492](http://www.ietf.org/rfc/rfc3492.txt) for more details. Not present (and ignored if present) if this Owner structure is embedded inside of a Zone structure |
 | zoneName |	The zone's domain name 	| string | valid domain name.  International domain names are specified using punycode. See [RFC 3492](http://www.ietf.org/rfc/rfc3492.txt) for more details. Not present (and ignored if present) if this Owner structure is embedded inside of a Zone structure. |
-| rrtypes	| The resource record types defined at the owner name		| object | The keys are valid resource records types, either expressed as numbers or names.
-It is an error to repeat a number or name, or to use both a number and a name that refer to the same resource record type (ex. "1" and "A"). |
+| rrtypes	| The resource record types defined at the owner name	| object | The keys are valid resource records types, either expressed as numbers or names.  It is an error to repeat a number or name, or to use both a number and a name that refer to the same resource record type (ex. "1" and "A"). |
 | rrtypes/{type}/rrsets |	The RRSets defined for the owner name and resource record type. |array|	List of [RRSet structures](RRSet Structure). |
 | nsec3s	| Present only for a signed domain. The NSEC3 records defined for the owner name.	A list of NSEC3s. Multiple NSEC3s are allowed for key rollover purposes (the salt, in particular, could be changing) |
 | nsec3s/algorithm |	Algorithm used to generate the hash. | integer | See [RFC 5155](http://www.ietf.org/rfc/rfc5155.txt) for more details.	An integer between 0 and 255, inclusive |
@@ -127,8 +125,7 @@ It is an error to repeat a number or name, or to use both a number and a name th
 | nsec3s/iterations	| The number of iterations used to generate the hash | integer |	An integer between 0 and 65535, inclusive |
 | nsec3s/salt	| The salt used to generate the hash for this owner's name.	| string | Hexidecimal string. If there is no salt for an NSEC3, this field is left out. |
 | nsec3s/nextOwnerName | The hash of the next owner name in alphabetical order.| string | base32-encoded string. |
-| rrtypes/{type}/profile | Vendor-specific information about how to interpret the RRSets for this owner name and record type	| object | 
-any key-value pairs defined are vendor-specific. If profile is empty, then it is assumed that there is a single RRSet called "default" present for the host name and record type, and that on a request all records are returned in a round-robin order. It is invalid to have an empty profile _AND_ more than one RRSet defined for a host name and record type. See Profile section. |
+| rrtypes/{type}/profile | Vendor-specific information about how to interpret the RRSets for this owner name and record type	| object | any key-value pairs defined are vendor-specific. If profile is empty, then it is assumed that there is a single RRSet called "default" present for the host name and record type, and that on a request all records are returned in a round-robin order. It is invalid to have an empty profile _AND_ more than one RRSet defined for a host name and record type. See Profile section. |
 
 
 _TODO: convert to jsonschema_
@@ -166,11 +163,10 @@ The profile section of an [Owner Structure](#Owner Structure) allows a vendor to
 ### Valid values for fields
 
 | Field      | Meaning      | Type | Valid Values  |
-|:-------------:|:-------------:|:-----:|:-----:|
+|:-------:|:-------------:|:-----:|:-----:|
 |name	| The domain name of the zone	A domain name. | string | International domain names are specified using punycode. See RFC 3492 for more details.
-|ownerNames |	The owner names defined within the zone.	| object |
-The keys are valid domain names. Both fully qualified domain names and relative domain names are allowed. Fully qualified domain names must end in a `.` (trailing period). Relative domain names must NOT end in a `.` (trailing period). It is an error to repeat a FQDN, repeat a relative domain name, or to have a relative domain name that resolves to a defined FQDN. The ownerNames section can be left empty if no records are defined for the zone. |
-profile |	Vendor-specific information about the zone | object | Any key-value pairs defined are vendor-specific. See Profile section|
+|ownerNames |	The owner names defined within the zone.	| object | The keys are valid domain names. Both fully qualified domain names and relative domain names are allowed. Fully qualified domain names must end in a `.` (trailing period). Relative domain names must NOT end in a `.` (trailing period). It is an error to repeat a FQDN, repeat a relative domain name, or to have a relative domain name that resolves to a defined FQDN. The ownerNames section can be left empty if no records are defined for the zone. |
+profile | Vendor-specific information about the zone | object | Any key-value pairs defined are vendor-specific. See Profile section|
 
 #### Profile
 
