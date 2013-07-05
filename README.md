@@ -2,7 +2,7 @@
 
 The goal of this project is openly define a DNS JSON Specification that will facilitate interoperability between DNS Providers.
 
-[UltraDNS](http://www.neustar.biz/enterprise/dns-services) is currently proposing the following format, but we would like to receive feedback from the community and format that anyone can implement.
+[UltraDNS](http://www.neustar.biz/enterprise/dns-services) is currently proposing the following format, but we would like to receive feedback from the community and define format that anyone can implement.
 
 
 
