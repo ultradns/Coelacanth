@@ -36,10 +36,10 @@ International domain names are specified using [punycode](http://www.ietf.org/rf
 
 | Field      | Meaning      | Type  | Valid Values  |
 |:-----------|:-------------|:-----:|:--------------|
-| zoneName   | The domain name of the apex of the zone. | string (FQDN) | The name of the zone that contains this RRSet.  Not present (and ignored if present) if this RRSet is embedded inside of a [Zone List Format](#Zone List Format) or [Compact Zone Format](#Compact Zone Format). |
-| ownerName     | The domain name of the owner of the RRSet | string (FQDN or RelDN) | If a FQDN, must be contained within the zone name FQDN.  The special value "@" can be used to represent an owner name at the apex of the zone.  Not present (and ignored if present) if this RRSet is embedded inside of a [Compact Zone Format](#Compact Zone Format).|
+| zoneName   | The domain name of the apex of the zone. | string (FQDN) | The name of the zone that contains this RRSet.  Not present (and ignored if present) if this RRSet is embedded inside of a [Zone List Format](#zone-list-format) or [Compact Zone Format](#compact-zone-format). |
+| ownerName     | The domain name of the owner of the RRSet | string (FQDN or RelDN) | If a FQDN, must be contained within the zone name FQDN.  The special value "@" can be used to represent an owner name at the apex of the zone.  Not present (and ignored if present) if this RRSet is embedded inside of a [Compact Zone Format](#compact-zone-format).|
 | class | The class of the DNS record | string | Optional.  Valid values are IN, CH, or HS.  If not present, defaults to IN. |
-| rrtype | Resource record type for the RRSet. | string | Resource Record Type. Contains the resource record type name (A, AAAA, SRV, etc.).  Optionally, a space, an opening parenthesis, the resource record type value (a number between 1 and 65535), and a closing parenthesis are also included. If there is no defined name for the resource record type value, the string TYPE and the resource record type value replaces the resource name (ex. TYPE1100 (1100)). Not present (and ignored if present) if this RRSet is embedded inside of a [Compact Zone Format](#Compact Zone Format). |
+| rrtype | Resource record type for the RRSet. | string | Resource Record Type. Contains the resource record type name (A, AAAA, SRV, etc.).  Optionally, a space, an opening parenthesis, the resource record type value (a number between 1 and 65535), and a closing parenthesis are also included. If there is no defined name for the resource record type value, the string TYPE and the resource record type value replaces the resource name (ex. TYPE1100 (1100)). Not present (and ignored if present) if this RRSet is embedded inside of a [Compact Zone Format](#compact-zone-format). |
 | ttl     | TTL for RRSet    | integer | between [0 and 2147483647](http://tools.ietf.org/html/rfc2181), inclusive. If ttl is not specified, then the TTL for the zone's negative answers is to be used. |
 | rdata  | The data for the records in the RRSet | array | List of data fields in presentation format for the specified rrtype.|
 | profile | Extension space to describe vendor-specific information about the RRSet | map | Optional.  If this RRSet does not have any vendor-specific functionality, this field is not included. See [RRSet Profile](#RRSet Profile) for more information. |
@@ -129,16 +129,16 @@ The Zone List Format describes all record sets defined for a zone name in a flat
 |:------|:-------------|:-----:|:-------------:|
 | @context | The JSON schema that describes this structure | string | http://schemas.neustar.biz/Zone.jsonschema Optional; this value is assumed if the @context field is missing. |
 | zoneName |    The zone's domain name.     | string | FQDN. |
-| rrsets   | The RRSets in the zone. |array | A list of objects in [RRSet Format](#RRSet Format). |
-| profile  | Vendor-specific information about the zone.  | object| See [Zone Profile](#Zone Profile) for more information. |
+| rrsets   | The RRSets in the zone. |array | A list of objects in [RRSet Format](#rrset-format). |
+| profile  | Vendor-specific information about the zone.  | object| See [Zone Profile](#zone-profile) for more information. |
 
 
-###  JSON Schema
+### JSON Schema
 _TODO: convert to jsonschema_
 
 
 ### Zone Profile
-The profile section of a [Zone List Format](#Zone List Format) or a [Compact Zone Format](#Compact Zone Format) allows a vendor to specify custom metadata for a zone.  [JSON-LD](http://json-ld.org/) must be used to specify the schema for the vendor-specific information.  
+The profile section of a [Zone List Format](#zone-list-format) or a [Compact Zone Format](#compact-zone-format) allows a vendor to specify custom metadata for a zone.  [JSON-LD](http://json-ld.org/) must be used to specify the schema for the vendor-specific information.  
 A profile must include a field called "@context" whose value is the URI for the JSON Schema that describes the profile's format.
             
 ## Compact Zone Format
@@ -188,8 +188,8 @@ As in all JSON formatted data, white space is not significant.
 |@context    | The JSON schema that describes this structure | string |  http://schemas.neustar.biz/CompactZone.jsonschema |
 |zoneName    | The zone's domain name.    | string | FQDN |
 |defaultTTL  | The TTL used for all RRSets that do not specify their own TTL. |  integer     |  between [0 and 2147483647](http://tools.ietf.org/html/rfc2181), inclusive. |
-|ownerNames  |    The owner names defined within the zone.| object | See [The ownerNames Field](#The ownerNames Field) for more information.|
-|profile     | Vendor-specific information about the zone | object | See [Zone Profile](#Zone Profile) for more information.|
+|ownerNames  |    The owner names defined within the zone.| object | See [The ownerNames Field](#the-ownernames-field) for more information.|
+|profile     | Vendor-specific information about the zone | object | See [Zone Profile](#zone-profile) for more information.|
 
 #### The ownerNames Field
 The value for the ownerNames field is a JSON object.  
@@ -198,7 +198,7 @@ The field names in the ownerNames object are valid domain names, either FQDNs or
 
 The values for the fields in the ownerNames object are also objects.  The field names are resource record type names.  For resource record type values with no defined resource record type names, the string TYPE and the resource record type value replaces the resource name (ex. TYPE1100).
 
-The values are objects in the [RRSet Format](#RRSet Format).
+The values are objects in the [RRSet Format](#rrset-format).
 
 ###  JSON Schema
 _TODO: convert to jsonschema_
@@ -236,12 +236,12 @@ In a signed zone, there are one or more RRSIG resource records for each RRSet.  
 | rrsigs/expiration | expiration date/time for rrsig | string |    YYYYMMDDHHmmSS in UTC (see [RFC 4034 3.2](http://www.ietf.org/rfc/rfc4034.txt)) |
 | rrsigs/inception | inception date/time for rrsig | string |    YYYYMMDDHHmmSS in UTC (see [RFC 4034 3.2](http://www.ietf.org/rfc/rfc4034.txt)) |
 | rrsig/keyTag    | The key tag value of the DNSKEY Resource Record. | unsigned integer | Unsigned 16-bit integer in base 10, which ranges from 0 to 65535. See [RFC 4034 3.2](http://www.ietf.org/rfc/rfc4034.txt) on how to calculate. |
-| rrsigs/signerName  | domain name that's signing this owner name.| string | Not present (and ignored if present) if this RRSet is embedded inside of a [Zone List Format](#Zone List Format) or [Compact Zone Format](#Compact Zone Format). |
+| rrsigs/signerName  | domain name that's signing this owner name.| string | Not present (and ignored if present) if this RRSet is embedded inside of a [Zone List Format](#zone-list-format) or [Compact Zone Format](#compact-zone-format). |
 | rrsigs/signature | The cryptographic signature. | string |  Base-64 encoded signature |  
 
 _Note: Several of the fields in the RRSIG wire and presentation format are not part of this structure.  This is because the type covered, label count, and original ttl are already present in the RRSet structure._
 
-Since an RRSIG is a standard resource record type, it is also legal to define an RRSIG RRSet separately from the associated RRSet.  In this case, the RRSIGs are specified like any other RRSet in either the [Zone List Format](#Zone List Format) or the [Compact Zone Format](#Compact Zone Format).
+Since an RRSIG is a standard resource record type, it is also legal to define an RRSIG RRSet separately from the associated RRSet.  In this case, the RRSIGs are specified like any other RRSet in either the [Zone List Format](#zone-list-format) or the [Compact Zone Format](#compact-zone-format).
 
 ### NSEC, NSEC3 and DNSKEY
 NSEC, NSEC3, and DNSKEY RRSets are specified like other standard RRSets.  No special support is provided in this specification for their representation.
@@ -281,7 +281,7 @@ GET from /v1/zones/{zoneName}
 DELETE from /v1/zones/{zoneName}
 
 ### Retrieving Zone Contents
-These calls return the zone in [Zone List Format](#Zone List Format).
+These calls return the zone in [Zone List Format](#zone-list-format).
 
 #### Full Zone Content
 GET from /v1/zones/{zoneName}/rrsets
@@ -298,7 +298,7 @@ GET from /v1/zones/{zoneName}/rrsets/ANY/{ownerName}
 GET from /v1/zones/{zoneName}/rrsets/{rrtype}/{ownerName}
 
 ### RRSet Modifications
-These calls use a [RRSet Format](#RRSet Format) as the data type.  The zoneName, ownerName, and rrType fields in the RRSet Format will be ignored if present, as this information is already available via the URI.
+These calls use a [RRSet Format](#rrset-format) as the data type.  The zoneName, ownerName, and rrType fields in the RRSet Format will be ignored if present, as this information is already available via the URI.
 
 #### Create an RRSet
 POST to /v1/zones/{zoneName}/rrsets/{rrType}/{ownerName}
@@ -312,7 +312,7 @@ DELETE from /v1/zones/{zoneName}/rrsets/{rrType}/{ownerName}
 ### Batch Operations
 
 #### Updating RRSets in a zone
-In order to update all RRSets in a zone, PUT or PATCH to /v1/zones/{zoneName}/rrsets.  Use either the [Zone List Format](#Zone List Format) or [Compact Zone Format](#Compact Zone Format).  PATCH allows updates to existing RRSets or adding new RRSets.  PUT requires all RRSets in the zone to be listed; any RRSets not included are deleted.
+In order to update all RRSets in a zone, PUT or PATCH to /v1/zones/{zoneName}/rrsets.  Use either the [Zone List Format](#zone-list-format) or [Compact Zone Format](#compact-zone-format).  PATCH allows updates to existing RRSets or adding new RRSets.  PUT requires all RRSets in the zone to be listed; any RRSets not included are deleted.
 
 Another option is to use the JSON-PATCH proposed standard: [json-patch](http://tools.ietf.org/html/draft-ietf-appsawg-json-patch-10), which allows additions, modifications, and deletes to be expressed within a PATCH.
 
