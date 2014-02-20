@@ -1,277 +1,326 @@
 # DNS JSON Spec
+The goal of this project is to openly define a DNS JSON Specification that will facilitate interoperability between DNS Providers.
 
-The goal of this project is openly define a DNS JSON Specification that will facilitate interoperability between DNS Providers.
-
-[UltraDNS](http://www.neustar.biz/enterprise/dns-services) is currently proposing the following format, but we would like to receive feedback from the community and define format that anyone can implement.
+[UltraDNS](http://www.neustar.biz/enterprise/dns-services) is proposing the following format, but we would like to receive feedback from the community and define a format that anyone can implement.
 
 ## Definitions
 - Fully Qualified Domain Name (FQDN) - Sometimes called Absolute Domain Names.  A domain name that ends in a dot (.), See [RFC 1035](http://tools.ietf.org/html/rfc1035) for details.  A zone name must be a FQDN.
-- Relative Domain Name (RelDN) - A domain name that does not end in a dot (.).  This name is concatinated with the zone's name to create a FQDN.  See [RFC 1035](http://tools.ietf.org/html/rfc1035) for details.
+- Relative Domain Name (RelDN) - A domain name that does not end in a dot (.).  This name is concatenated with the zone's name to create a FQDN.  See [RFC 1035](http://tools.ietf.org/html/rfc1035) for details.
 
 ## Conventions
 ### International Domain Names
 International domain names are specified using [punycode](http://www.ietf.org/rfc/rfc3492.txt). See [RFC 3492](http://tools.ietf.org/html/rfc3492) for more details.
 
-## RRSet Structure
+## RRSet Format
 
     {
-    	"zoneName" : "domain.name.",
-    	"ownerName": "a.domain.name.",
-    	"title": "default",
-    	"version": 1,
-    	"rrtype": "A",
-    	"ttl": 300,
-    	"rdata": [
-    		"1.2.3.4",
-    		"2.4.6.8",
-    		"9.8.7.6"
-    	],
-    	"rrsigs": [
-    			{
-    				"algorithm": 5,
-    				"expiration": "20140701130030",
-    				"inception": "20130701130030",
-    				"keyTag": "12345",
-    				"signerName": "domain.name.",
-    				"signature": "ABC123YOUANDME="
-    			}
-    	]
+        "zoneName" : "domain.name.",
+        "ownerName": "a.domain.name.",
+        "class" : "IN",
+        "rrtype": "A (1)",
+        "ttl": 300,
+        "rdata": [
+            "1.2.3.4",
+            "5.6.7.8",
+            "9.10.11.12"
+        ],
+        "profile": {
+            "@context": "http://schemas.ultradns.com/RDPool.jsonschema",
+            "order": "FIXED"
+        }
     }
  
 
 ### Valid values for fields
 
 
-| Field      | Meaning      | Type | Valid Values  |
-|:-------------:|:-------------:|:-----:|:-----:|	
-| zoneName | The domain name of the apex of the zone. | string | FQDN.  Not present (and ignored if present) if this RRSet is embedded inside of an Owner structure. |
-| ownerName	 | The domain name of the owner of the RRSet | string |	Either FQDN or RelDN.  If a FQDN, must be contained within the zone name FQDN.  Not present (and ignored if present) if this RRSet is embedded inside of an Owner structure. |
-| title  | A user-defined name for the RRSet	 | string | unique for all RRSets with same owner name and type. For non-pools, this value is always "default". This name must be composed of the characters a-zA-Z0-9_- . If the title field is not specified, "default" is assumed. |
-| version	 | version of RRSet. Each update should increase this value.	| unsigned integer | positive 128-bit integer in base 10, which ranges from 1 to 340282366920938463463374607431768211455. Leading zeros must be left off.
-| rrtype | Resource record type for the RRSet. | string |	Resource Record Type. Either a number between 1 and 65535 or a known resource record name (A, AAAA, SRV, etc.). Not present (and ignored if present) if this RRSet is embedded inside of an Owner structure. |
-| ttl	 | TTL for RRSet	| integer | between [0 and 2147483647](http://tools.ietf.org/html/rfc2181), inclusive. If ttl is not specified, then the TTL for the zone's negative answers is to be used. |
-| rdata  | The data for the records in the RRSet | array |	List of data fields in presentation format for the specified rrtype. |
-| rrsigs  | Present only for signed zones. | array | RRSIG information for the RRSet.	 |
-| rrsigs/algorithm | algorithm used for rrsig | unsigned integer |	unsigned, positive 8-bit integer in base 10. 1, 2, 3, 4, 5, 252, 253, and 254 are valid values. See [RFC 4034](http://www.ietf.org/rfc/rfc4034.txt) for valid value definitions. |
-| rrsigs/expiration | expiration date/time for rrsig | string |	YYYYMMDDHHmmSS in UTC (see [RFC 4034 3.2](http://www.ietf.org/rfc/rfc4034.txt)) |
-| rrsigs/inception | inception date/time for rrsig | string |	YYYYMMDDHHmmSS in UTC (see [RFC 4034 3.2](http://www.ietf.org/rfc/rfc4034.txt)) |
-| rrsig/keyTag	| | unsigned integer | Unsigned 16-bit integer in base 10, which ranges from 0 to 65535. See [RFC 4034 3.2](http://www.ietf.org/rfc/rfc4034.txt) on how to calculate. |
-| rrsigs/signerName  | domain name that's signing	domain name. | string | Not present (and ignored if present) if this RRSet is embedded inside of an Owner structure. |
-| rrsigs/signature | | string |  Base-64 encoded signature |  |
+| Field      | Meaning      | Type  | Valid Values  |
+|:-----------|:-------------|:-----:|:--------------|
+| zoneName   | The domain name of the apex of the zone. | string (FQDN) | The name of the zone that contains this RRSet.  Not present (and ignored if present) if this RRSet is embedded inside of a [Zone List Format](#Zone List Format) or [Compact Zone Format](#Compact Zone Format). |
+| ownerName     | The domain name of the owner of the RRSet | string (FQDN or RelDN) | If a FQDN, must be contained within the zone name FQDN.  The special value "@" can be used to represent an owner name at the apex of the zone.  Not present (and ignored if present) if this RRSet is embedded inside of a [Compact Zone Format](#Compact Zone Format).|
+| class | The class of the DNS record | string | Optional.  Valid values are IN, CH, or HS.  If not present, defaults to IN. |
+| rrtype | Resource record type for the RRSet. | string | Resource Record Type. Contains the resource record type name (A, AAAA, SRV, etc.).  Optionally, a space, an opening parenthesis, the resource record type value (a number between 1 and 65535), and a closing parenthesis are also included. If there is no defined name for the resource record type value, the string TYPE and the resource record type value replaces the resource name (ex. TYPE1100 (1100)). Not present (and ignored if present) if this RRSet is embedded inside of a [Compact Zone Format](#Compact Zone Format). |
+| ttl     | TTL for RRSet    | integer | between [0 and 2147483647](http://tools.ietf.org/html/rfc2181), inclusive. If ttl is not specified, then the TTL for the zone's negative answers is to be used. |
+| rdata  | The data for the records in the RRSet | array | List of data fields in presentation format for the specified rrtype.|
+| profile | Extension space to describe vendor-specific information about the RRSet | map | Optional.  If this RRSet does not have any vendor-specific functionality, this field is not included. See [RRSet Profile](#RRSet Profile) for more information. |
 
+### JSON Schema
 
 _TODO: convert to jsonschema_
 
-_Note: that several of the fields in the RRSIG wire and presentation format are not part of this structure.  This is because the type covered, label count, and original ttl are already present in the RRSet structure._
+### RRSet Profile
+The profile filed allows a vendor to specify custom metadata for an RRSet.  This allows vendors to represent extensions to the standard DNS concepts and types, yet describe them in a vendor-independent format.  [JSON-LD](http://json-ld.org/) must be used to specify the schema for the vendor-specific information.  A profile must include a field called "@context" whose value is the URI for the JSON Schema that describes the profile's format.
+
+#### Example: UltraDNS Resource Distribution Pools
+For example, UltraDNS has a pool type called a "Resource Distribution Pool" or RD Pool.  RD Pools allow customers to specify how the A or AAAA resource records in an RRSet are ordered when the RRSet is returned by the authoritative resolver.  There are three options:
+
+- FIXED - Return the records in the same order each time
+- RANDOM - Return the records in a random order each time
+- ROUND_ROBIN - On each request, rotate which record is returned first
+
+The current DNS wire and presentation formats provide no place for this information to be stored, so a profile is used to represent this information:
+
+    "profile": {
+      "@context": "http://schemas.ultradns.com/RDPool.jsonschema",
+      "order": "FIXED"
+    }
+
+The JSON Schema to represent this is:
+
+	{
+		"$schema": "http://json-schema.org/schema#",
+		"title": "RD Pool Profile",
+		"type":"object",
+		"properties":{
+			"@context": {
+				"description":"The name for this profile schema",
+				"type":"string",
+				"enum": ["http://schemas.ultradns.com/RDPool.jsonschema"]
+			},
+			"order": {
+				"description":"The valid values describing how to order records in an RD Pool",
+				"type":"string",
+				"enum": ["FIXED", "RANDOM", "ROUND_ROBIN"]
+			}
+		},
+		"required": ["@context", "order"]
+	}
 
 
+## Zone List Format
 
-## Owner Structure
-
-The Owner structure describes the record sets defined at a particular domain name.
+The Zone List Format describes all record sets defined for a zone name in a flat list.  It is convenient for representing paginated RRSets or RRSets that are sorted by an attribute other than owner name.
 
     {
-    	"zoneName": "domain.name.",
-    	"ownerName": "a.domain.name.",
-    	"rrtypes": {
-    		"A": {
-    			"rrsets": [
-    				{
-    					"version": 1,
-    					"ttl": 300,
-    					"rdata": [
-    						"1.2.3.4",
-    						"2.4.6.8",
-    						"9.8.7.6"
-    					]
-    				}
-    			],
-    			"profile": {
-    				"@context": "http://neustar.biz/RDPool.jsonschema",
-    				"order": "FIXED"
-    			}
-    		},
-    		"16": {
-    			"rrsets": [
-    				{
-    					"version": 1,
-    					"ttl": 300,
-    					"rdata": [
-    						"The quick brown fox jumped over the lazy dog"
-    					]
-    				}
-    			],
-    			"profile": {
-    			}
-    		}
-    	},
-    	"nsec3s": [
-    		{
-    			"algorithm": 1,
-    			"flags": 1,
-    			"iterations": 1,
-    			"salt": "DEADBEEF",
-    			"nextOwnerName": "ABCDEF"
-    		}
-    	]
+        "@context": "http://schemas.neustar.biz/Zone.jsonschema",
+        "zoneName": "domain.name.",
+        "rrsets" : [
+            {
+                "ownerName": "a.domain.name.",
+                "rrtype": "A (1)",
+                 "ttl": 300,
+                "rdata": [
+                    "1.2.3.4",
+                    "2.4.6.8",
+                    "9.8.7.6"
+                ],
+                "profile": {
+                    "@context": "http://schemas.ultradns.com/RDPool.jsonschema",
+                    "order": "FIXED"
+                }
+            },
+            {
+                "ownerName": "a.domain.name.",
+                "rrtype": "TXT (16)",
+                "ttl": 300,
+                "rdata": [
+                    "The quick brown fox jumped over the lazy dog"
+                ]
+            }            
+        ],
+        "profile" : {
+        }        
     }
 
 
 ### Valid values for fields
 
-| Field      | Meaning      | Type | Valid Values  |
-|:------:|:-------------:|:-----:|:-----:|	
-| zoneName |	The zone's domain name 	| string | FQDN.  Not present (and ignored if present) if this RRSet is embedded inside of a Zone structure. |
-| ownerName | The domain name for the owner	| string | Either FQDN or RelDN.  If a FQDN, must be contained within the zone name FQDN.  Not present (and ignored if present) if this RRSet is embedded inside of a Zone structure. |
-| rrtypes	| The resource record types defined at the owner name	| object | The keys are valid resource records types, either expressed as numbers or names.  It is an error to repeat a number or name, or to use both a number and a name that refer to the same resource record type (ex. "1" and "A"). |
-| rrtypes/{type}/rrsets |	The RRSets defined for the owner name and resource record type. |array|	List of [RRSet structures](#RRSet Structure). |
-| nsec3s	| Present only for a signed domain. The NSEC3 records defined for the owner name.	A list of NSEC3s. Multiple NSEC3s are allowed for key rollover purposes (the salt, in particular, could be changing) |
-| nsec3s/algorithm |	Algorithm used to generate the hash. | integer | See [RFC 5155](http://www.ietf.org/rfc/rfc5155.txt) for more details.	An unsigned 8-bit integer between 0 and 255, inclusive |
-| nsec3s/flags |	Flags for NSEC3 See [RFC 5155](http://www.ietf.org/rfc/rfc5155.txt) for more details.	| integer | An unsigned 8-bit integer between 0 and 255, inclusive |
-| nsec3s/iterations	| The number of iterations used to generate the hash | integer |	An unsigned 16-bit integer between 0 and 65535, inclusive |
-| nsec3s/salt	| The salt used to generate the hash for this owner's name.	| string | Hexidecimal string. If there is no salt for an NSEC3, this field is left out. |
-| nsec3s/nextOwnerName | The hash of the next owner name in alphabetical order.| string | base32-encoded string. |
-| rrtypes/{type}/profile | Vendor-specific information about how to interpret the RRSets for this owner name and record type	| object | any key-value pairs defined are vendor-specific. If profile is empty, then it is assumed that there is a single RRSet called "default" present for the host name and record type, and that on a request all records are returned in a round-robin order. It is invalid to have an empty profile _AND_ more than one RRSet defined for a host name and record type. See [Profile](#Profile) section. |
+| Field | Meaning      | Type  | Valid Values  |
+|:------|:-------------|:-----:|:-------------:|
+| @context | The JSON schema that describes this structure | string | http://schemas.neustar.biz/Zone.jsonschema Optional; this value is assumed if the @context field is missing. |
+| zoneName |    The zone's domain name.     | string | FQDN. |
+| rrsets   | The RRSets in the zone. |array | A list of objects in [RRSet Format](#RRSet Format). |
+| profile  | Vendor-specific information about the zone.  | object| See [Zone Profile](#Zone Profile) for more information. |
 
 
+###  JSON Schema
 _TODO: convert to jsonschema_
 
 
-#### Profile
+### Zone Profile
+The profile section of a [Zone List Format](#Zone List Format) or a [Compact Zone Format](#Compact Zone Format) allows a vendor to specify custom metadata for a zone.  [JSON-LD](http://json-ld.org/) must be used to specify the schema for the vendor-specific information.  
+A profile must include a field called "@context" whose value is the URI for the JSON Schema that describes the profile's format.
+            
+## Compact Zone Format
+In order to avoid repetition of the owner name and TTL, another format can be used to describe a zone. The @context field is assigned the value "http://schemas.neustar.biz/CompactZone.jsonschema" in order to differentiate the compact zone format from the zone list format.
 
-The profile section of an [Owner Structure](#Owner Structure) allows a vendor to specify custom metadata for an owner name or RRSet within that owner name.  [JSON-LD](http://json-ld.org/) should be used to specify the schema for the vendor-specific information.  For example, to describe the RD (Resource Distribution) pools supported by UltraDNS, the following content would be used in a profile:
-
-			"profile": {
-				"@context": "http://schemas.neustar.biz/RDPool.jsonschema",
-				"order": "FIXED"
-			}
-			
-## Zone Structure
+As in all JSON formatted data, white space is not significant.
 
     {
-    	"zoneName": "domain.name.",
-    	"ownerNames": {
-    		"a.domain.name.": {
-    			"rrtypes": {
-    				"A": {
-            			"rrsets": [
-    	        			{
-    			        	    "version": 1,
-    					        "ttl": 300,
-        					    "rdata": [
-        					    	"1.2.3.4",
-    	    					    "2.4.6.8",
-    		    				    "9.8.7.6"
-    			       		    ]
-    			       		}
-    			        ],
-            			"profile": {
-    	        			"@context": "http://neustar.biz/RDPool.jsonschema",
-    			        	"order": "FIXED"
-    			        }
-    			    },
-            		"16": {
-    	        		"rrsets": [
-    			        	{
-    					        "version": 1,
-            					"ttl": 300,
-    	        				"rdata": [
-    			        			"The quick brown fox jumped over the lazy dog"
-    					        ]
-            				}
-    	        		],
-            			"profile": {
-    	        		}
-            		}
-    	        }
-    	    },
-    		"b": {
-    		    "rrtypes": {
-    		        "A": {
-    		            "rrsets": [
-    		                {
-    		                    "version": 1,
-    		                    "ttl":500,
-    		                    "rdata": [
-    		                        "12.34.56.78"
-    		                    ]
-    		                }
-    		            ],
-    		            "profile": {
-    		            }
-    		        }
-    		    }
-    		}
-    	},
-    	"profile": {
-    	}
+        "@context": "http://schemas.ultradns.com/CompactZone.jsonschema",
+        "zoneName": "domain.name.",
+        "defaultTTL": 300,
+        "ownerNames": {
+            "a.domain.name.": {
+                "A" : {
+                     "rdata": [
+                        "1.2.3.4",
+                        "2.4.6.8",
+                        "9.8.7.6"
+                    ],
+                    "profile": {
+                        "@context": "http://schemas.neustar.biz/RDPool.jsonschema",
+                        "order": "FIXED"
+                    }
+                },
+                "TXT": {
+                     "rdata": [
+                          "The quick brown fox jumped over the lazy dog"
+                    ]
+                   }
+            },
+            "b": {
+              "A": {
+                    "ttl":500,
+                    "rdata": [
+                        "12.34.56.78"
+                    ]
+              }
+            }
+        }
     }
     
 
 ### Valid values for fields
 
-| Field      | Meaning      | Type | Valid Values  |
-|:-------:|:-------------:|:-----:|:-----:|
-|zoneName	| The domain name of the zone	A domain name. | string | FQDN |
-|ownerNames |	The owner names defined within the zone.	| object | The keys are valid domain names, either FQDNs or RelDNs.  It is an error to repeat a FQDN, repeat a relative domain name, or to have a relative domain name that resolves to a defined FQDN. The ownerNames section can be left empty if no records are defined for the zone. |
-profile | Vendor-specific information about the zone | object | Any key-value pairs defined are vendor-specific. See [Profile](#Profile) section|
+| Field      | Meaning       | Type  | Valid Values  |
+|:----------:|:-------------:|:-----:|:-------------:|
+|@context    | The JSON schema that describes this structure | string |  http://schemas.neustar.biz/CompactZone.jsonschema |
+|zoneName    | The zone's domain name.    | string | FQDN |
+|defaultTTL  | The TTL used for all RRSets that do not specify their own TTL. |  integer     |  between [0 and 2147483647](http://tools.ietf.org/html/rfc2181), inclusive. |
+|ownerNames  |    The owner names defined within the zone.| object | See [The ownerNames Field](#The ownerNames Field) for more information.|
+|profile     | Vendor-specific information about the zone | object | See [Zone Profile](#Zone Profile) for more information.|
 
-#### Profile
+#### The ownerNames Field
+The value for the ownerNames field is a JSON object.  
 
-The profile section of the [Zone structure](#Zone Structure) is required, but can be empty.  An empty profile section means that no vendor custom metadata is defined for this zone.
+The field names in the ownerNames object are valid domain names, either FQDNs or RelDNs.  The special field name "@" represents an owner name at the apex of the zone.  It is an error to repeat a FQDN, repeat a relative domain name, repeat "@", to have defined both "@" and a FQDN for the zone, or to have a relative domain name that resolves to a defined FQDN. The ownerNames section can be left empty if no records are defined for the zone.   
 
+The values for the fields in the ownerNames object are also objects.  The field names are resource record type names.  For resource record type values with no defined resource record type names, the string TYPE and the resource record type value replaces the resource name (ex. TYPE1100).
+
+The values are objects in the [RRSet Format](#RRSet Format).
+
+###  JSON Schema
+_TODO: convert to jsonschema_
+
+
+## DNSSEC Extensions
+### RRSIG
+In a signed zone, there are one or more RRSIG resource records for each RRSet.  Rather than specify the RRSIGs separately from the associated RRSet, an optional RRSIG section can be added to an RRSet in a signed zone:
+
+    {
+        "zoneName" : "domain.name.",
+        "ownerName": "a.domain.name.",
+        "class" : "IN",
+        "rrtype": "A (1)",
+        "ttl": 300,
+        "rdata": [
+            "1.2.3.4"
+        ],
+        "rrsigs": [
+                {
+                    "algorithm": 5,
+                    "expiration": "20140701130030",
+                    "inception": "20130701130030",
+                    "keyTag": "12345",
+                    "signerName": "domain.name.",
+                    "signature": "ABC123YOUANDME="
+                }
+        ],
+    }
+
+| Field      | Meaning      | Type  | Valid Values  |
+|:-----------|:-------------|:-----:|:--------------|
+| rrsigs  | List of resource record signatures.  | array | RRSIG information for the RRSet. Present only for signed zones.|
+| rrsigs/algorithm | algorithm used for rrsig | unsigned integer | unsigned, positive 8-bit integer in base 10. 1, 2, 3, 4, 5, 252, 253, and 254 are valid values. See [RFC 4034](http://www.ietf.org/rfc/rfc4034.txt) for valid value definitions. |
+| rrsigs/expiration | expiration date/time for rrsig | string |    YYYYMMDDHHmmSS in UTC (see [RFC 4034 3.2](http://www.ietf.org/rfc/rfc4034.txt)) |
+| rrsigs/inception | inception date/time for rrsig | string |    YYYYMMDDHHmmSS in UTC (see [RFC 4034 3.2](http://www.ietf.org/rfc/rfc4034.txt)) |
+| rrsig/keyTag    | The key tag value of the DNSKEY Resource Record. | unsigned integer | Unsigned 16-bit integer in base 10, which ranges from 0 to 65535. See [RFC 4034 3.2](http://www.ietf.org/rfc/rfc4034.txt) on how to calculate. |
+| rrsigs/signerName  | domain name that's signing this owner name.| string | Not present (and ignored if present) if this RRSet is embedded inside of a [Zone List Format](#Zone List Format) or [Compact Zone Format](#Compact Zone Format). |
+| rrsigs/signature | The cryptographic signature. | string |  Base-64 encoded signature |  
+
+_Note: Several of the fields in the RRSIG wire and presentation format are not part of this structure.  This is because the type covered, label count, and original ttl are already present in the RRSet structure._
+
+Since an RRSIG is a standard resource record type, it is also legal to define an RRSIG RRSet separately from the associated RRSet.  In this case, the RRSIGs are specified like any other RRSet in either the [Zone List Format](#Zone List Format) or the [Compact Zone Format](#Compact Zone Format).
+
+### NSEC, NSEC3 and DNSKEY
+NSEC, NSEC3, and DNSKEY RRSets are specified like other standard RRSets.  No special support is provided in this specification for their representation.
+
+### Private keys for ZSK and KSK
+There is nothing in this specification to describe how the private keys for the ZSK and KSK records are transmitted.  A vendor can use the profile field in the zone formats to define a custom system for security transmitting the keys.
+
+### DS
+There is nothing in this specification to describe how a DS record is transmitted to the DNS provider for a parent zone or registrar.  
 
 ## API Recommendations
 
 ### Resource URI
-
-    /v1/{className}/zones/{zonesName}/records/{rrtype}/{ownerName}/{rrSetId}
+    /v1/zones/{zonesName}/rrsets/{rrtype}/{ownerName}
 
 Path Params
 
-| Param	| Meaning |
+| Param    | Meaning |
 |:-------------:|:-----:|
-| className |	IN, CH, HS, CS (Obsolete). Most commonly, IN is used. |
-| zoneName	| The domain name. The trailing . is optional, but recommended.| 
+| zoneName    | The domain name. The trailing . is optional, but recommended.| 
 | rrtype | The type of the records. This can be expressed either as a 16-bit unsigned positive number or as a standard resource record name (A, AAAA, TXT, SRV, etc). The special rrtype of "ANY" is used in combination with a specified ownerName to return all resource records of all types at a specified owner name. |
 | ownerName | The owner name. This name may be fully qualified or partial. A fully qualified name must end in a `.` (trailing period). A partial name must not end in a `.` (trailing period)
-| rrSetName	| The name of the RRSet. This name is unique for the record type and owner name. If there are no dynamic features for the owner name and record type, the rrSetId should be "default".|
 
-### Creating a Zone
+### Zone management
+This specification does not cover the vendor-specific zone information needed to create a new zone or update a zone's metadata.  However, the standard Resource URI can be used to refer to the per-vendor zone metadata resource.
+
+#### Creating a Zone
+POST to /v1/zones
+
+#### Updating a Zone
+PUT or PATCH to /v1/zones/{zoneName}
+
+#### Retrieving Zone Metadata
+GET from /v1/zones/{zoneName}
+
+##### Deleting a Zone
+DELETE from /v1/zones/{zoneName}
 
 ### Retrieving Zone Contents
+These calls return the zone in [Zone List Format](#Zone List Format).
 
 #### Full Zone Content
+GET from /v1/zones/{zoneName}/rrsets
 
 #### Partial Zone Content
 
-### Updating a Zone
+##### To get all record sets of a specified type for a zone:
+GET from /v1/zones/{zoneName}/rrsets/{rrtype}
 
-#### Updating a complete zone
+##### To get all record sets at a specified owner name:
+GET from /v1/zones/{zoneName}/rrsets/ANY/{ownerName}
 
-In order to update a complete zone, specify all data in a zone from the [Zone Structure](#Zone Structure) object down.  Deletes of an owner or an RRSet are performed by not including them in the structure.
+##### To get the record set at a specified owner name and type:
+GET from /v1/zones/{zoneName}/rrsets/{rrtype}/{ownerName}
 
-#### Updating a single RRSet or multiple RRSets at a single owner name
+### RRSet Modifications
+These calls use a [RRSet Format](#RRSet Format) as the data type.  The zoneName, ownerName, and rrType fields in the RRSet Format will be ignored if present, as this information is already available via the URI.
 
-In order to update a single RRSet, use an [RRSet Structure](#RRSet Structure) object only.  
+#### Create an RRSet
+POST to /v1/zones/{zoneName}/rrsets/{rrType}/{ownerName}
 
-If you are specifying vendor-specific data and/or multiple RRSets for for a single owner name, use an [Owner Structure](#Owner Structure). Deletes of RRSets are performed by not including them in the structure.
+#### Update an RRSet
+PUT or PATCH to /v1/zones/{zoneName}/rrsets/{rrType}/{ownerName}
 
+#### Delete an RRSet 
+DELETE from /v1/zones/{zoneName}/rrsets/{rrType}/{ownerName}
 
-#### Updating multiple RRSets
-In order to modify multiple RRSets within a single operation, the recommendation is to use the JSON-PATCH proposed standard: [json-patch](http://tools.ietf.org/html/draft-ietf-appsawg-json-patch-10).
+### Batch Operations
 
+#### Updating RRSets in a zone
+In order to update all RRSets in a zone, PUT or PATCH to /v1/zones/{zoneName}/rrsets.  Use either the [Zone List Format](#Zone List Format) or [Compact Zone Format](#Compact Zone Format).  PATCH allows updates to existing RRSets or adding new RRSets.  PUT requires all RRSets in the zone to be listed; any RRSets not included are deleted.
 
-
+Another option is to use the JSON-PATCH proposed standard: [json-patch](http://tools.ietf.org/html/draft-ietf-appsawg-json-patch-10), which allows additions, modifications, and deletes to be expressed within a PATCH.
 
 ## Coelacanth
-
 [Coelacanth](http://en.wikipedia.org/wiki/Coelacanth) is a "living fossil".
 
 ## Contributors
-
 Google group for [Coelacanth](https://groups.google.com/forum/#!forum/coelacanth-dev)
-
 
 Neustar
 
@@ -284,6 +333,8 @@ Neustar
 UltraDNS support is not implied or guaranteed by use of this project. We will happily take patches or pull requests and address issues as much as possible.
 
 ## Version
+0.3 - Match the implementation in the beta of UltraDNS's REST API for RRSet Format, Zone List Format, and API.  Update Compact Zone Format.  Introduce section on DNSSEC support.
+
 0.2 - Incorporate some comments from https://groups.google.com/d/msg/coelacanth-dev/8ivUlQ_N2vk/DvBPpkIaD6QJ
 
 0.1 - Initial release
