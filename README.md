@@ -326,7 +326,6 @@ Neustar
 
 * [Jonathan Bodner](https://github.com/jonbodner)
 * [Jeff Damick](https://github.com/jdamick)
-* [Edward Lewis](http://blog.neustar.biz/author/elewis/)
 * [Vijay Poliboyina](http://www.linkedin.com/pub/vijay-poliboyina/a/a7a/745)
 
 
